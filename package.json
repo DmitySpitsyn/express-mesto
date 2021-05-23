@@ -1,0 +1,16 @@
+{
+    "name": "mesto-backend",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "lint": "npx eslint"
+    },
+    "author": "Спицын Дмитрий",
+    "license": "ISC",
+    "devDependencies": {
+        "eslint": "^7.27.0",
+        "eslint-config-airbnb-base": "^14.2.1",
+        "eslint-plugin-import": "^2.23.3"
+    }
+}
