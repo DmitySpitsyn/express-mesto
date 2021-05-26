@@ -1,5 +1,12 @@
 const cards = require('../models/card');
 
+function validatorError(res, err, text) {
+    if (err.name == 'ValidationError') {
+        return res.status(400).send({ message: text })
+    }
+    return res.status(500).send({ message: 'ошибка по-умолчанию' })
+}
+
 module.exports.getCards = (req, res) => {
     cards.find({})
         .then(cards => res.send({ data: cards }))
@@ -12,10 +19,7 @@ module.exports.createCard = (req, res) => {
     cards.create({ name, link, owner })
         .then(card => res.send({ data: card }))
         .catch((err) => {
-            if (err.name == 'ValidationError') {
-                return res.status(400).send({ message: 'Переданы некорректные данные при создании карточки.' })
-            }
-            return res.status(500).send({ message: 'ошибка по-умолчанию' })
+            validatorError(res, err, 'Переданы некорректные данные при создании карточки.')
         });
 };
 
@@ -30,13 +34,17 @@ module.exports.deleteCard = (req, res) => {
 };
 
 module.exports.likeCard = (req, res) => {
-    cards.updateOne({ _id: req.params.cardId }, { $addToSet: { likes: req.user._id } })
+    cards.updateOne({ _id: req.params.cardId }, { $addToSet: { likes: req.user._id } }, { runValidators: true })
         .then(card => res.send({ data: card }))
-        .catch(() => res.status(500).send({ message: 'ошибка по-умолчанию' }));
+        .catch((err) => {
+            validatorError(res, err, 'Переданы некорректные данные для постановки/снятии лайка.')
+        });
 };
 
 module.exports.dislikeCard = (req, res) => {
-    cards.updateOne({ _id: req.params.cardId }, { $pull: { likes: req.user._id } })
+    cards.updateOne({ _id: req.params.cardId }, { $pull: { likes: req.user._id } }, { runValidators: true })
         .then(card => res.send({ data: card }))
-        .catch(() => res.status(500).send({ message: 'ошибка по-умолчанию' }));
+        .catch((err) => {
+            validatorError(res, err, 'Переданы некорректные данные для постановки/снятии лайка.')
+        });
 };
