@@ -1,4 +1,6 @@
 const mongoose = require('mongoose');
+
+mongoose.set('useUnifiedTopology', true);
 const express = require('express');
 
 const { PORT = 3000 } = process.env;

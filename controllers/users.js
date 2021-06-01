@@ -19,15 +19,15 @@ module.exports.getUser = (req, res) => {
   const { id } = req.params;
   return users.findById(id)
     .then((user) => {
-      res.status(200).send({
-        name: user.name, about: user.about, avatar: user.avatar, _id: user._id,
-      });
-    })
-    .catch((user) => {
       if (user) {
-        return res.status(400).send({ message: 'Пользователь по указанному _id не найден.' });
+        return res.status(200).send({
+          name: user.name, about: user.about, avatar: user.avatar, _id: user._id,
+        });
       }
-      return res.status(500).send({ message: 'Ошибка по-умолчанию' });
+      return res.status(404).send({ message: 'Пользователь по указанному _id не найден.' });
+    })
+    .catch(() => {
+      res.status(500).send({ message: 'Ошибка по-умолчанию' });
     });
 };
 
@@ -43,7 +43,6 @@ module.exports.createUser = (req, res) => {
 module.exports.patchUser = (req, res) => {
   const { name, about } = req.body;
   const owner = req.user._id;
-  console.log({ name, about, owner });
   users.findByIdAndUpdate(owner, { name, about }, { runValidators: true })
     .then((user) => {
       if (user) { return res.status(200).send({ data: user }); }
