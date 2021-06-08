@@ -1,4 +1,8 @@
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const users = require('../models/user');
+
+const saltRounds = 10;
 
 function validatorError(res, err, text) {
   if (err.name === 'ValidationError') {
@@ -9,6 +13,18 @@ function validatorError(res, err, text) {
 
 module.exports.getUsers = (req, res) => {
   users.find({})
+    .then((items) => {
+      res.status(200).send({ data: items });
+    })
+    .catch(() => res.status(500).send({ message: 'Ошибка по-умолчанию' }));
+};
+
+module.exports.getUserMe = (req, res) => {
+  const {
+    email, password,
+  } = req.body;
+  console.log(_id);
+  return users.findById(_id)
     .then((items) => {
       res.status(200).send({ data: items });
     })
@@ -31,9 +47,29 @@ module.exports.getUser = (req, res) => {
     });
 };
 
+module.exports.login = (req, res) => {
+  const {
+    email, password,
+  } = req.body;
+  return users.findUserByCredentials(email, password)
+    .then((user) => {
+      const token = jwt.sign({ _id: user._id }, '206b149e0530995fa78d83d588e69363a2182047b78f05f944c6b5b75e49c6f1');
+      console.log(user._id);
+      res.status(200).send({ token });
+      //  res.cookie('jwt', token, {
+      //    httpOnly: true,
+      //  })
+      //   .end();
+    }).catch((err) => { res.status(401).send({ message: err.message }); });
+};
+
 module.exports.createUser = (req, res) => {
-  const { name, about, avatar } = req.body;
-  users.create({ name, about, avatar })
+  const {
+    name, about, avatar, email, password,
+  } = req.body;
+  bcrypt.hash(password, saltRounds).then((hash) => users.create({
+    name, about, avatar, email, password: hash,
+  }))
     .then((user) => res.send({ data: user }))
     .catch((err) => {
       validatorError(res, err, 'Переданы некорректные данные при создании пользователя.');
