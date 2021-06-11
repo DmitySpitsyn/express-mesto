@@ -1,52 +1,59 @@
+const validator = require('validator');
 const cards = require('../models/card');
+const IncorrectDataError = require('../errors/incorrect-data-error');
+const NotFoundError = require('../errors/not-found-error');
 
-function validatorError(res, err, text) {
-  if (err.name === 'ValidationError') {
-    return res.status(400).send({ message: text });
-  }
-
-  return res.status(500).send({ message: 'ошибка по-умолчанию' });
-}
-
-module.exports.getCards = (req, res) => {
+module.exports.getCards = (req, res, next) => {
   cards.find({})
-    .then((items) => res.send({ data: items }))
-    .catch(() => res.status(500).send({ message: 'ошибка по-умолчанию' }));
+    .then((items) => res.send(items))
+    .catch(next);
 };
 
-module.exports.createCard = (req, res) => {
+module.exports.createCard = (req, res, next) => {
   const { name, link } = req.body;
+  if (!validator.isURL(link)) {
+    throw new IncorrectDataError('Ссылка некорректна!');
+  }
   cards.create({ name, link, owner: req.user._id })
-    .then((card) => res.send({ data: card }))
-    .catch((err) => {
-      validatorError(res, err, 'Переданы некорректные данные при создании карточки.');
-    });
+    .then((card) => res.send(card))
+    .catch(() => {
+      throw new IncorrectDataError('Переданы некорректные данные при создании карточки.');
+    }).catch(next);
 };
 
-module.exports.deleteCard = (req, res) => {
+module.exports.deleteCard = (req, res, next) => {
   const { cardId } = req.params;
-  cards.findByIdAndDelete(cardId)
-    .then((card) => {
-      if (card) { return res.status(200).send({ data: card }); }
-      return res.status(404).send({ message: 'Карточка с указанным _id не найдена.' });
-    })
-    .catch(() => res.status(500).send({ message: 'Ошибка по-умолчанию' }));
+  return cards.findById(cardId).then((card) => {
+    if (card) {
+      if (card.owner.toString() === req.user._id) {
+        res.status(200).send(card);
+        card.remove();
+        return;
+      }
+      const error = new Error('Нельзя удалить чужую карточку');
+      error.statusCode = 403;
+      next(error);
+    }
+    throw new NotFoundError('Карточка по указанному _id не найдена.');
+  }).catch(next);
 };
 
-module.exports.likeCard = (req, res) => {
+module.exports.likeCard = (req, res, next) => {
   cards.updateOne({ _id: req.params.cardId }, { $addToSet: { likes: req.user._id } },
     { runValidators: true })
-    .then((card) => res.send({ data: card }))
-    .catch((err) => {
-      validatorError(res, err, 'Переданы некорректные данные для постановки/снятии лайка.');
-    });
+    .then((card) => res.send(card))
+    .catch(() => {
+      throw new IncorrectDataError('Переданы некорректные данные для постановки/снятии лайка.');
+    }).catch(next);
 };
 
-module.exports.dislikeCard = (req, res) => {
+module.exports.dislikeCard = (req, res, next) => {
   cards.updateOne({ _id: req.params.cardId }, { $pull: { likes: req.user._id } },
     { runValidators: true })
-    .then((card) => res.send({ data: card }))
-    .catch((err) => {
-      validatorError(res, err, 'Переданы некорректные данные для постановки/снятии лайка.');
-    });
+    .then((card) => {
+      res.send(card);
+    })
+    .catch(() => {
+      throw new IncorrectDataError('Переданы некорректные данные для постановки/снятии лайка.');
+    }).catch(next);
 };
