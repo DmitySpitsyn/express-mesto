@@ -2,7 +2,6 @@ const mongoose = require('mongoose');
 
 mongoose.set('useUnifiedTopology', true);
 const express = require('express');
-const path = require('path');
 
 const { PORT = 3000 } = process.env;
 const app = express();
@@ -12,7 +11,6 @@ const routeCards = require('./routes/cards');
 const { createUser, login } = require('./controllers/users');
 const auth = require('./middlewares/auth');
 const IncorrectDataError = require('./errors/incorrect-data-error');
-const NotFoundError = require('./errors/not-found-error');
 
 app.use(bodyParser.json());
 
@@ -21,8 +19,6 @@ mongoose.connect('mongodb://localhost:27017/mestodb', {
   useCreateIndex: true,
   useFindAndModify: false,
 });
-
-app.use(express.static(path.join(__dirname, 'public')));
 
 app.post('/signin', login);
 app.post('/signup', createUser);
