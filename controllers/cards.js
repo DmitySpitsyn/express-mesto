@@ -1,3 +1,4 @@
+/* eslint-disable no-shadow */
 const validator = require('validator');
 const cards = require('../models/card');
 const IncorrectDataError = require('../errors/incorrect-data-error');
@@ -39,21 +40,19 @@ module.exports.deleteCard = (req, res, next) => {
 };
 
 module.exports.likeCard = (req, res, next) => {
-  cards.updateOne({ _id: req.params.cardId }, { $addToSet: { likes: req.user._id } },
-    { runValidators: true })
-    .then((card) => res.send(card))
-    .catch(() => {
-      throw new IncorrectDataError('Переданы некорректные данные для постановки/снятии лайка.');
-    }).catch(next);
+  const { cardId } = req.params;
+  cards.findById(cardId).then((card) => {
+    if (!card) { throw new NotFoundError('Карточка по указанному _id не найдена.'); }
+    cards.findOneAndUpdate({ _id: cardId }, { $addToSet: { likes: req.user._id } },
+      { runValidators: true, new: true }, (err, card) => res.send(card));
+  }).catch(next);
 };
 
 module.exports.dislikeCard = (req, res, next) => {
-  cards.updateOne({ _id: req.params.cardId }, { $pull: { likes: req.user._id } },
-    { runValidators: true })
-    .then((card) => {
-      res.send(card);
-    })
-    .catch(() => {
-      throw new IncorrectDataError('Переданы некорректные данные для постановки/снятии лайка.');
-    }).catch(next);
+  const { cardId } = req.params;
+  cards.findById(cardId).then((card) => {
+    if (!card) { throw new NotFoundError('Карточка по указанному _id не найдена.'); }
+    cards.findOneAndUpdate({ _id: cardId }, { $pull: { likes: req.user._id } },
+      { runValidators: true, new: true }, (err, card) => res.send(card));
+  }).catch(next);
 };
