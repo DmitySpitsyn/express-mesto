@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const cors = require('cors');
 
 mongoose.set('useUnifiedTopology', true);
 const express = require('express');
@@ -20,6 +21,8 @@ mongoose.connect('mongodb://localhost:27017/mestodb', {
   useCreateIndex: true,
   useFindAndModify: false,
 });
+
+app.use(cors());
 
 app.use(requestLogger);
 app.post('/signin', login);

@@ -33,6 +33,15 @@ module.exports.getUser = (req, res, next) => {
     .catch(next);
 };
 
+module.exports.getUserMe = (req, res, next) => {
+  const { _id } = req.user;
+  users.findById(_id)
+    .then((user) => {
+      res.status(200).send(user);
+    })
+    .catch(next);
+};
+
 module.exports.login = (req, res, next) => {
   const {
     email, password,
@@ -79,7 +88,8 @@ module.exports.patchUser = (req, res, next) => {
   users.findById(owner).then((user) => {
     if (!user) { throw new NotFoundError('Пользователь по указанному _id не найден.'); }
     if ((!name) || (!about)) { throw new IncorrectDataError('Не заполнены обязательные поля'); }
-    users.findOneAndUpdate(owner, { name, about }, { runValidators: true, new: true },
+    users.findOneAndUpdate({ _id: owner }, { $set: { name, about } },
+      { runValidators: true, new: true },
       (err, item) => {
         if (err) {
           const error = new Error('Ошибка валидации');
@@ -98,7 +108,7 @@ module.exports.patchAvatar = (req, res, next) => {
     if (!user) { throw new NotFoundError('Пользователь по указанному _id не найден.'); }
     if (!avatar) { throw new IncorrectDataError('Не заполнены обязательные поля'); }
     if (!validator.isURL(avatar)) { throw new IncorrectDataError('Введенный URL не коректен'); }
-    users.findOneAndUpdate(owner, { avatar }, { runValidators: true, new: true },
+    users.findOneAndUpdate({ _id: owner }, { $set: { avatar } }, { runValidators: true, new: true },
       (err, item) => {
         if (err) {
           const error = new Error('Ошибка валидации');
