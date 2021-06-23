@@ -6,6 +6,7 @@ const NotFoundError = require('../errors/not-found-error');
 const IncorrectDataError = require('../errors/incorrect-data-error');
 const IncorrectLoginPasswordError = require('../errors/incorrect-login-password');
 
+const { NODE_ENV, JWT_SECRET } = process.env;
 const saltRounds = 10;
 
 function validatorFields(email, password) {
@@ -49,12 +50,14 @@ module.exports.login = (req, res, next) => {
   validatorFields(email, password);
   return users.findUserByCredentials(email, password)
     .then((user) => {
-      const token = jwt.sign({ _id: user._id }, '206b149e0530995fa78d83d588e69363a2182047b78f05f944c6b5b75e49c6f1');
-      res.status(200).send({ token });
-      //  res.cookie('jwt', token, {
-      //    httpOnly: true,
-      //  })
-      //   .end();
+      const token = jwt.sign({ _id: user._id }, NODE_ENV === 'production' ? JWT_SECRET : 'dev-secret');
+      res.status(200)
+        .cookie('token', token, {
+          maxAge: 3600000,
+          httpOnly: true,
+          sameSite: 'Strict',
+        }).send({ token })
+        .end();
     }).catch(() => {
       throw new IncorrectLoginPasswordError('Неверный логин или пароль');
     }).catch(next);
@@ -119,3 +122,5 @@ module.exports.patchAvatar = (req, res, next) => {
       });
   }).catch(next);
 };
+
+//206b149e0530995fa78d83d588e69363a2182047b78f05f944c6b5b75e49c6f1

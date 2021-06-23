@@ -1,11 +1,15 @@
+require('dotenv').config();
 const mongoose = require('mongoose');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 
 mongoose.set('useUnifiedTopology', true);
 const express = require('express');
 
 const { PORT = 3000 } = process.env;
 const app = express();
+app.use(cors({ origin: 'http://localhost:3001', credentials: true }));
+app.use(cookieParser());
 const bodyParser = require('body-parser');
 const routeUsers = require('./routes/users');
 const routeCards = require('./routes/cards');
@@ -22,9 +26,12 @@ mongoose.connect('mongodb://localhost:27017/mestodb', {
   useFindAndModify: false,
 });
 
-app.use(cors());
-
 app.use(requestLogger);
+app.get('/crash-test', () => {
+  setTimeout(() => {
+    throw new Error('Сервер сейчас упадёт');
+  }, 0);
+});
 app.post('/signin', login);
 app.post('/signup', createUser);
 app.use('/users', auth, routeUsers);
