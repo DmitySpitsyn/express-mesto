@@ -29,6 +29,7 @@ module.exports.getUser = (req, res, next) => {
   const { userId } = req.params;
   users.findById(userId)
     .then((user) => {
+      if (!user) { throw new NotFoundError('Пользователь по указанному _id не найден.'); }
       res.status(200).send(user);
     })
     .catch(next);
@@ -55,7 +56,8 @@ module.exports.login = (req, res, next) => {
         .cookie('token', token, {
           maxAge: 3600000,
           httpOnly: true,
-          sameSite: 'Strict',
+          sameSite: 'None',
+          secure: true,
         }).send({ token })
         .end();
     }).catch(() => {
@@ -122,5 +124,3 @@ module.exports.patchAvatar = (req, res, next) => {
       });
   }).catch(next);
 };
-
-//206b149e0530995fa78d83d588e69363a2182047b78f05f944c6b5b75e49c6f1
